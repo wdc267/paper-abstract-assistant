@@ -1,0 +1,42 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 测试 / 类型 / 代码检查缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── 密钥与本地配置（绝不入库）───────────────────────────
+.env
+.env.*
+!.env.example
+# 运行时由 PUT /profile 写回的用户配置
+config.yaml
+
+# ── AI 助手本地设置 ─────────────────────────────────────
+.claude/settings.local.json
+
+# ── IDE ─────────────────────────────────────────────────
+# 保留共享的调试配置，忽略其余本地设置
+.vscode/*
+!.vscode/launch.json
+
+# ── 操作系统 ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 日志 ────────────────────────────────────────────────
+*.log

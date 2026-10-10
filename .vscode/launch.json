@@ -1,0 +1,22 @@
+
+{
+    "version": "0.2.0",
+    "configurations": [  
+      {
+        "name": "调试 parser.py（PDF）",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/parser.py",
+        "args": ["${workspaceFolder}/PenForge On-the-Fly Expert Agent Construction for Automated.pdf"],
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "调试 summarizer.py",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/summarizer.py",
+        "args": ["${workspaceFolder}/sample_paper.txt"],
+        "console": "integratedTerminal"
+      }
+    ]
+  }
