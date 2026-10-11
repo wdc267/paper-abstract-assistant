@@ -39,7 +39,7 @@ PDF ──parser──▶ 纯文本（含页码/章节标记）
 | 模块1 解析器 | `parser.py` | PDF → 纯文本（含页码/章节提示），CLI 打印统计 | `bytes` → `str` |
 | 模块2 摘要器 | `summarizer.py` | 纯文本 → 7 字段结构化摘要 | `str` → `dict` |
 | 模块3 编排器 | `main.py` | HTTP 接口、模块串联、异常兜底、配置读写 | HTTP 层 |
-| 模块4 前端 | `index.html` *(待实现)* | 上传、调接口、渲染结果 | — |
+| 模块4 前端 | `index.html` | 上传、调接口、渲染结果 | — |
 
 > 模块划分与数据契约是本项目的硬约束，详见 [CLAUDE.md](CLAUDE.md)。
 
@@ -147,7 +147,7 @@ paper-abstract-assistant/
 ├── parser.py            # 模块1 解析器
 ├── summarizer.py        # 模块2 摘要器
 ├── main.py              # 模块3 编排器（FastAPI）
-├── index.html           # 模块4 前端（待实现）
+├── index.html           # 模块4 前端（单页，无构建）
 ├── requirements.txt
 ├── sample_paper.txt     # 调试样本（由测试 PDF 转出）
 ├── CLAUDE.md            # 项目约束与设计决策
@@ -165,5 +165,5 @@ paper-abstract-assistant/
 - [x] 模块1 解析器：PDF → 纯文本，标题识别含 Title Case 校验
 - [x] 模块2 摘要器：Map-Reduce + DeepSeek JSON mode
 - [x] 模块3 编排器：FastAPI 接口 + config.yaml 研究方向配置
-- [ ] 模块4 前端：单页 HTML
+- [x] 模块4 前端：单页 HTML（拖放上传 / 粘贴文本，七色字段编码）
 - [ ] 输出 Markdown 格式化（预留 `formatter`）

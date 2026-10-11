@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文结构化摘要</title>
+<style>
+  :root {
+    --paper: #F3F4F1;
+    --surface: #FFFFFF;
+    --ink: #1C2422;
+    --muted: #5F6B66;
+    --line: #E3E6E0;
+    --accent: #2E6E63;
+
+    /* 7 个字段的「书脊色」：同明度、中低饱和，成一组 */
+    --d1: #3E5C9A;
+    --d2: #2F6E68;
+    --d3: #6B4E7E;
+    --d4: #3F6B45;
+    --d5: #9A6A2E;
+    --d6: #7A5A52;
+    --d7: #8A4560;
+
+    --serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", Georgia, serif;
+    --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", -apple-system, "Segoe UI", system-ui, sans-serif;
+
+    --radius: 10px;
+    --measure: 46rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 2.75rem 1.25rem 5rem;
+  }
+
+  /* ── 报头 ─────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .masthead h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .masthead p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .masthead .docs {
+    color: var(--accent);
+    font-size: 0.82rem;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .masthead .docs:hover { text-decoration: underline; }
+
+  /* ── 输入区 ───────────────────────────────────── */
+  .panel { margin-top: 1.75rem; }
+
+  .modes {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.2rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .mode {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+
+  .mode[aria-selected="true"] {
+    background: var(--ink);
+    color: #fff;
+  }
+
+  .pane { margin-top: 1rem; }
+  .pane[hidden] { display: none; }
+
+  /* 投放区 */
+  .drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 12.5rem;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .drop:hover { border-color: var(--muted); }
+
+  .drop.is-over {
+    border-color: var(--accent);
+    background: #F0F5F2;
+  }
+
+  .drop svg { width: 26px; height: 26px; stroke: var(--muted); }
+
+  .drop strong {
+    color: var(--ink);
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+
+  .drop span { font-size: 0.82rem; }
+
+  .drop.has-file { border-style: solid; border-color: var(--accent); color: var(--ink); }
+  .drop.has-file svg { stroke: var(--accent); }
+
+  textarea#content {
+    width: 100%;
+    min-height: 12.5rem;
+    padding: 1rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font: inherit;
+    font-family: var(--serif);
+    line-height: 1.8;
+    resize: vertical;
+  }
+
+  textarea#content:focus-visible,
+  .direction input:focus-visible,
+  .drop:focus-visible,
+  .mode:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* 研究方向 */
+  .direction {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .direction label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .direction input {
+    flex: 1 1 16rem;
+    min-width: 0;
+    padding: 0.55rem 0.75rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  .ghost {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .ghost:hover { border-color: var(--muted); color: var(--ink); }
+
+  /* 提交 */
+  .submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+  }
+
+  .primary {
+    appearance: none;
+    border: 0;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.7rem 1.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .primary:hover { background: #2C3936; }
+  .primary:disabled { opacity: 0.55; cursor: progress; }
+
+  /* ── 状态行 ───────────────────────────────────── */
+  .status {
+    margin-top: 1.25rem;
+    font-size: 0.88rem;
+    color: var(--muted);
+    min-height: 1.4em;
+  }
+
+  .status.error {
+    color: #9A3B2E;
+  }
+
+  /* ── 结果 ─────────────────────────────────────── */
+  .result { margin-top: 2.5rem; }
+  .result[hidden] { display: none; }
+
+  .result__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .result__head h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  ol.items {
+    list-style: none;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  ol.items li {
+    border-left: 3px solid var(--c, var(--muted));
+    padding-left: 1.1rem;
+    animation: rise 0.5s ease both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .item__label {
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--c, var(--muted));
+    margin-bottom: 0.35rem;
+  }
+
+  .item__text {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    line-height: 1.85;
+    max-width: 38rem;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ol.items li { animation: none; }
+    .drop { transition: none; }
+  }
+
+  @media (max-width: 520px) {
+    .wrap { padding: 1.75rem 1rem 3.5rem; }
+    .masthead { flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+    .submit-row { justify-content: stretch; }
+    .primary { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <h1>论文结构化摘要</h1>
+      <p>上传 PDF 或粘贴文本，生成七项中文要点，按你的研究方向定制。</p>
+    </div>
+    <a class="docs" href="/docs">接口文档</a>
+  </header>
+
+  <main class="panel">
+    <div class="modes" role="tablist" aria-label="输入方式">
+      <button class="mode" id="tab-upload" role="tab" aria-selected="true" aria-controls="pane-upload">上传 PDF</button>
+      <button class="mode" id="tab-paste" role="tab" aria-selected="false" aria-controls="pane-paste">粘贴文本</button>
+    </div>
+
+    <div class="pane" id="pane-upload" role="tabpanel" aria-labelledby="tab-upload">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="选择或拖入 PDF 文件">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4"></path>
+          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+        </svg>
+        <strong id="drop-title">拖入 PDF，或点击选择文件</strong>
+        <span id="drop-hint">支持含文本层的 PDF，不超过 20MB</span>
+        <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-paste" role="tabpanel" aria-labelledby="tab-paste" hidden>
+      <textarea id="content" placeholder="在此粘贴论文全文或摘要…"></textarea>
+    </div>
+
+    <div class="direction">
+      <label for="direction">研究方向</label>
+      <input type="text" id="direction" placeholder="例如：检索增强生成、智能体自动构建" autocomplete="off">
+      <button class="ghost" id="save-profile" type="button">保存为默认</button>
+    </div>
+
+    <div class="submit-row">
+      <button class="primary" id="submit" type="button">生成摘要</button>
+    </div>
+
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </main>
+
+  <section class="result" id="result" hidden aria-live="polite">
+    <div class="result__head">
+      <h2>结构化摘要</h2>
+      <button class="ghost" id="copy" type="button">复制全部</button>
+    </div>
+    <ol class="items" id="items"></ol>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const DIMS = [
+    ["research_question", "研究问题"],
+    ["research_background", "研究背景"],
+    ["research_method", "研究方法"],
+    ["conclusion", "结论"],
+    ["innovation", "创新点"],
+    ["limitations", "局限性"],
+    ["value_to_me", "对我的价值"],
+  ];
+
+  const el = {
+    tabUpload: document.getElementById("tab-upload"),
+    tabPaste: document.getElementById("tab-paste"),
+    paneUpload: document.getElementById("pane-upload"),
+    panePaste: document.getElementById("pane-paste"),
+    drop: document.getElementById("drop"),
+    dropTitle: document.getElementById("drop-title"),
+    dropHint: document.getElementById("drop-hint"),
+    file: document.getElementById("file"),
+    content: document.getElementById("content"),
+    direction: document.getElementById("direction"),
+    saveProfile: document.getElementById("save-profile"),
+    submit: document.getElementById("submit"),
+    status: document.getElementById("status"),
+    result: document.getElementById("result"),
+    items: document.getElementById("items"),
+    copy: document.getElementById("copy"),
+  };
+
+  let selectedFile = null;
+  let mode = "upload";
+  let lastResult = null;
+
+  const setStatus = (msg, isError) => {
+    el.status.textContent = msg || "";
+    el.status.classList.toggle("error", Boolean(isError));
+  };
+
+  // ── 输入方式切换 ────────────────────────────────
+  function selectMode(next) {
+    mode = next;
+    const upload = next === "upload";
+    el.tabUpload.setAttribute("aria-selected", String(upload));
+    el.tabPaste.setAttribute("aria-selected", String(!upload));
+    el.paneUpload.hidden = !upload;
+    el.panePaste.hidden = upload;
+  }
+
+  el.tabUpload.addEventListener("click", () => selectMode("upload"));
+  el.tabPaste.addEventListener("click", () => selectMode("paste"));
+
+  // ── 文件选择 / 拖放 ─────────────────────────────
+  function setFile(file) {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      setStatus("请选择 PDF 文件。", true);
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setStatus("文件超过 20MB，请换一个更小的 PDF。", true);
+      return;
+    }
+    selectedFile = file;
+    el.drop.classList.add("has-file");
+    el.dropTitle.textContent = file.name;
+    el.dropHint.textContent = (file.size / 1024 / 1024).toFixed(1) + " MB · 点击可更换";
+    setStatus("");
+  }
+
+  el.drop.addEventListener("click", () => el.file.click());
+  el.drop.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.file.click(); }
+  });
+  el.file.addEventListener("change", () => setFile(el.file.files[0]));
+
+  ["dragenter", "dragover"].forEach((ev) =>
+    el.drop.addEventListener(ev, (e) => { e.preventDefault(); el.drop.classList.add("is-over"); })
+  );
+  ["dragleave", "drop"].forEach((ev) =>
+    el.drop.addEventListener(ev, (e) => { e.preventDefault(); el.drop.classList.remove("is-over"); })
+  );
+  el.drop.addEventListener("drop", (e) => setFile(e.dataTransfer.files[0]));
+
+  // ── 研究方向默认值 ──────────────────────────────
+  async function loadProfile() {
+    try {
+      const res = await fetch("/profile");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.research_direction) el.direction.value = data.research_direction;
+    } catch (_) { /* 首屏拉取失败不阻塞使用 */ }
+  }
+
+  el.saveProfile.addEventListener("click", async () => {
+    try {
+      const res = await fetch("/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ research_direction: el.direction.value.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      setStatus("已保存为默认研究方向。");
+    } catch (_) {
+      setStatus("保存失败，请稍后重试。", true);
+    }
+  });
+
+  // ── 生成摘要 ────────────────────────────────────
+  async function requestSummary() {
+    const direction = el.direction.value.trim();
+    if (mode === "upload") {
+      if (!selectedFile) {
+        setStatus("请先选择或拖入一个 PDF 文件。", true);
+        return null;
+      }
+      const form = new FormData();
+      form.append("file", selectedFile);
+      if (direction) form.append("research_direction", direction);
+      return fetch("/upload", { method: "POST", body: form });
+    }
+    const text = el.content.value.trim();
+    if (!text) {
+      setStatus("请先粘贴论文文本。", true);
+      return null;
+    }
+    return fetch("/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: text, research_direction: direction }),
+    });
+  }
+
+  function render(data) {
+    lastResult = data;
+    el.items.innerHTML = "";
+    DIMS.forEach(([key, label], i) => {
+      const li = document.createElement("li");
+      li.style.setProperty("--c", `var(--d${i + 1})`);
+      li.style.setProperty("--i", String(i));
+
+      const name = document.createElement("span");
+      name.className = "item__label";
+      name.textContent = label;
+
+      const text = document.createElement("p");
+      text.className = "item__text";
+      text.textContent = data[key] || "缺失";
+
+      li.append(name, text);
+      el.items.append(li);
+    });
+    el.result.hidden = false;
+  }
+
+  el.submit.addEventListener("click", async () => {
+    setStatus("");
+    el.submit.disabled = true;
+    el.submit.textContent = "生成中…";
+    el.result.hidden = true;
+
+    const started = Date.now();
+    try {
+      const res = await requestSummary();
+      if (!res) return;
+      const data = await res.json();
+      if (!res.ok) {
+        const detail = data && data.detail;
+        throw new Error(typeof detail === "string" ? detail : "请求失败，请检查输入后重试。");
+      }
+      render(data);
+      setStatus(`完成，用时 ${((Date.now() - started) / 1000).toFixed(1)} 秒。`);
+    } catch (err) {
+      setStatus(err.message || "出错了，请重试。", true);
+    } finally {
+      el.submit.disabled = false;
+      el.submit.textContent = "生成摘要";
+    }
+  });
+
+  // ── 复制 ────────────────────────────────────────
+  el.copy.addEventListener("click", async () => {
+    if (!lastResult) return;
+    const lines = DIMS.map(([key, label]) => `## ${label}\n${lastResult[key] || "缺失"}`);
+    try {
+      await navigator.clipboard.writeText(lines.join("\n\n"));
+      setStatus("已复制全部摘要。");
+    } catch (_) {
+      setStatus("复制失败，请手动选择。", true);
+    }
+  });
+
+  loadProfile();
+})();
+</script>
+</body>
+</html>
