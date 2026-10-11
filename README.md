@@ -38,7 +38,7 @@ PDF ──parser──▶ 纯文本（含页码/章节标记）
 |------|------|------|----------|
 | 模块1 解析器 | `parser.py` | PDF → 纯文本（含页码/章节提示），CLI 打印统计 | `bytes` → `str` |
 | 模块2 摘要器 | `summarizer.py` | 纯文本 → 7 字段结构化摘要 | `str` → `dict` |
-| 模块3 编排器 | `main.py` *(待实现)* | HTTP 接口、模块串联、异常兜底 | — |
+| 模块3 编排器 | `main.py` | HTTP 接口、模块串联、异常兜底、配置读写 | HTTP 层 |
 | 模块4 前端 | `index.html` *(待实现)* | 上传、调接口、渲染结果 | — |
 
 > 模块划分与数据契约是本项目的硬约束，详见 [CLAUDE.md](CLAUDE.md)。
@@ -106,16 +106,25 @@ result = summarizer.summarize(text, research_direction="检索增强生成")
 print(result["value_to_me"])
 ```
 
-### HTTP API（规划中）
+### HTTP 服务
 
-模块3 完成后将提供：
+**启动**（需已配置 `DEEPSEEK_API_KEY`）：
+
+```bash
+.venv/Scripts/python.exe -m uvicorn main:app --reload --port 8000
+```
+
+打开 <http://127.0.0.1:8000> 即为前端页面；接口文档见 <http://127.0.0.1:8000/docs>。`config.yaml` 存默认研究方向，**不存在时退回空串**（该文件不入库）。
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/summarize` | 纯文本 → 7 字段摘要 |
-| `POST` | `/upload` | 上传 PDF → 7 字段摘要 |
+| `POST` | `/summarize` | 纯文本 → 7 字段摘要，body `{"content": "...", "research_direction": "可选"} |
+| `POST` | `/upload` | 上传 PDF → 7 字段摘要（仅 PDF，≤20MB），表单字段 `file` 与可选 `research_direction` |
 | `GET` | `/profile` | 读取默认研究方向 |
-| `PUT` | `/profile` | 写回默认研究方向 |
+| `PUT` | `/profile` | 写回默认研究方向，body `{"research_direction": "..."}` |
+| `GET` | `/` | 前端页面（模块4 未实现时返回占位提示） |
+
+请求省略 `research_direction` 时用默认研究方向；显式传入则覆盖本次。错误映射：解析失败 `400`、模型失败 `502`、参数校验 `422`。
 
 ## 输出字段
 
@@ -137,6 +146,8 @@ print(result["value_to_me"])
 paper-abstract-assistant/
 ├── parser.py            # 模块1 解析器
 ├── summarizer.py        # 模块2 摘要器
+├── main.py              # 模块3 编排器（FastAPI）
+├── index.html           # 模块4 前端（待实现）
 ├── requirements.txt
 ├── sample_paper.txt     # 调试样本（由测试 PDF 转出）
 ├── CLAUDE.md            # 项目约束与设计决策
@@ -153,6 +164,6 @@ paper-abstract-assistant/
 
 - [x] 模块1 解析器：PDF → 纯文本，标题识别含 Title Case 校验
 - [x] 模块2 摘要器：Map-Reduce + DeepSeek JSON mode
-- [ ] 模块3 编排器：FastAPI 接口
+- [x] 模块3 编排器：FastAPI 接口 + config.yaml 研究方向配置
 - [ ] 模块4 前端：单页 HTML
-- [ ] 研究方向配置持久化（`config.yaml`）+ 输出 Markdown 格式化
+- [ ] 输出 Markdown 格式化（预留 `formatter`）

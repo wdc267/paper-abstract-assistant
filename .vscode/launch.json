@@ -17,6 +17,14 @@
         "program": "${workspaceFolder}/summarizer.py",
         "args": ["${workspaceFolder}/sample_paper.txt"],
         "console": "integratedTerminal"
+      },
+      {
+        "name": "调试 FastAPI (main.py)",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": ["main:app", "--reload", "--port", "8000"],
+        "console": "integratedTerminal"
       }
     ]
   }

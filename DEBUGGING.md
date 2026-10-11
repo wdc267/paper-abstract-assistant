@@ -112,7 +112,7 @@ python -c "import os; print(bool(os.environ.get('DEEPSEEK_API_KEY')))"
 
 ### 新增一条配置
 
-`Ctrl+Shift+P` → `Debug: Add Configuration`，或在数组里手写一段。以后 `main.py` 建好后可加：
+`Ctrl+Shift+P` → `Debug: Add Configuration`，或在数组里手写一段。模块3 `main.py` 已随项目配好一条，格式如下（供参考/扩展）：
 
 ```json
 {
