@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 # DeepSeek 兼容 OpenAI 协议
 BASE_URL = "https://api.deepseek.com"
@@ -33,6 +34,9 @@ MAX_RETRIES = 3
 DIRECT_TOKEN_LIMIT = 8_000
 # 单个 Map 单元（章节/分段）的 token 上限，超过则按空行再切
 MAX_SECTION_TOKENS = 15_000
+
+# Map 阶段并发线程数：各分段互不依赖，可并行请求 DeepSeek
+MAP_WORKERS = 4
 
 # 输出固定 7 字段；顺序即前端展示顺序
 DIMENSIONS: tuple[tuple[str, str], ...] = (
@@ -104,7 +108,7 @@ def summarize(text: str, research_direction: str = "") -> dict[str, str]:
         for title, body in _chunk_section(title, body)
         if body.strip()
     ]
-    partials = [_map_unit(title, body) for title, body in units]
+    partials = _map_units(units)
     raw = _chat(_SYSTEM, _reduce_prompt(partials, research_direction))
     return _normalize(_parse_json(raw))
 
@@ -247,6 +251,14 @@ def _chat(system: str, user: str) -> str:
     except Exception as exc:  # openai 的各类网络/鉴权/限流异常
         raise SummarizerError(f"DeepSeek 调用失败：{exc}") from exc
     return resp.choices[0].message.content or ""
+
+
+def _map_units(units: list[tuple[str, str]]) -> list[dict]:
+    """并发执行各分段的 Map，返回顺序与 ``units`` 一致（供 Reduce 使用）。"""
+    if len(units) <= 1:
+        return [_map_unit(title, body) for title, body in units]
+    with ThreadPoolExecutor(max_workers=MAP_WORKERS) as pool:
+        return list(pool.map(lambda unit: _map_unit(unit[0], unit[1]), units))
 
 
 def _map_unit(title: str, body: str) -> dict:

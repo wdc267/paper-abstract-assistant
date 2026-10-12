@@ -210,6 +210,7 @@
   .direction input:focus-visible,
   .drop:focus-visible,
   .mode:focus-visible,
+  summary:focus-visible,
   button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -312,13 +313,37 @@
     border-top: 1px solid var(--line);
   }
 
-  .group__title {
-    margin: 0 0 1.25rem;
+  /* 可折叠标题：点击论文名收起/展开 */
+  summary.group__title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    list-style: none;
+    cursor: pointer;
     font-family: var(--serif);
     font-size: 1.02rem;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
+
+  summary.group__title::-webkit-details-marker { display: none; }
+
+  summary.group__title::before {
+    content: "";
+    flex: none;
+    width: 0;
+    height: 0;
+    border-left: 5px solid var(--muted);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    transition: transform 0.15s ease;
+  }
+
+  details[open] > summary.group__title::before { transform: rotate(90deg); }
+
+  details[open] > summary.group__title { margin-bottom: 1.25rem; }
+
+  summary.group__title:hover { color: var(--accent); }
 
   .group__pending { margin: 0; color: var(--muted); font-size: 0.9rem; }
   .group__error { margin: 0; color: #9A3B2E; font-size: 0.9rem; }
@@ -364,6 +389,7 @@
   @media (prefers-reduced-motion: reduce) {
     ol.items li { animation: none; }
     .drop { transition: none; }
+    summary.group__title::before { transition: none; }
   }
 
   @media (max-width: 520px) {
@@ -586,13 +612,15 @@
 
   // ── 结果渲染 ────────────────────────────────────
   function createGroup(title) {
-    const node = document.createElement("article");
+    const collapsible = Boolean(title);
+    const node = document.createElement(collapsible ? "details" : "article");
     node.className = "group";
-    if (title) {
-      const h = document.createElement("h3");
-      h.className = "group__title";
-      h.textContent = title;
-      node.append(h);
+    if (collapsible) {
+      node.open = true;  // 默认展开，点击标题可收起
+      const summary = document.createElement("summary");
+      summary.className = "group__title";
+      summary.textContent = title;
+      node.append(summary);
     }
     const pending = document.createElement("p");
     pending.className = "group__pending";
