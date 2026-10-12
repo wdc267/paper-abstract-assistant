@@ -6,9 +6,10 @@
 端点：
     POST /summarize   纯文本 → 7 字段摘要
     POST /upload      PDF 上传 → 7 字段摘要
+    POST /export      多篇摘要 → Markdown 下载（不重新调用模型）
     GET  /profile     读取默认研究方向
     PUT  /profile     写回默认研究方向（config.yaml）
-    GET  /            前端页面（模块4，暂缺时返回提示）
+    GET  /            前端页面（模块4）
 
 模块间契约不变：``bytes→str``(parser)、``str→dict``(summarizer)；本层只搬运与翻译错误。
 摘要为阻塞调用，故端点用同步 ``def``，由 FastAPI 调度到线程池，避免堵住事件循环。
@@ -20,9 +21,10 @@ from pathlib import Path
 
 import yaml
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 
+import formatter
 import parser as parser_module
 import summarizer as summarizer_module
 
@@ -45,6 +47,15 @@ class SummarizeRequest(BaseModel):
 
 class Profile(BaseModel):
     research_direction: str = ""
+
+
+class ExportPaper(BaseModel):
+    title: str = ""
+    summary: dict[str, str]
+
+
+class ExportRequest(BaseModel):
+    papers: list[ExportPaper]
 
 
 def _load_direction() -> str:
@@ -109,6 +120,19 @@ def upload(
     )
     return _run(
         lambda: summarizer_module.summarize(parser_module.extract_text(data), direction)
+    )
+
+
+@app.post("/export")
+def export_markdown(req: ExportRequest) -> Response:
+    """把已生成的一篇或多篇摘要格式化为 Markdown 下载（不重新调用模型）。"""
+    if not req.papers:
+        raise HTTPException(status_code=400, detail="没有可导出的摘要")
+    markdown = formatter.to_markdown([(p.title, p.summary) for p in req.papers])
+    return Response(
+        content=markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="abstracts.md"'},
     )
 
 

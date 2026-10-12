@@ -120,7 +120,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    min-height: 12.5rem;
+    min-height: 11rem;
     padding: 2rem;
     background: var(--surface);
     border: 1.5px dashed var(--line);
@@ -148,8 +148,49 @@
 
   .drop span { font-size: 0.82rem; }
 
-  .drop.has-file { border-style: solid; border-color: var(--accent); color: var(--ink); }
-  .drop.has-file svg { stroke: var(--accent); }
+  /* 已选文件 */
+  .filelist {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .filelist li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.7rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+
+  .filelist .name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .filelist .size { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+
+  .filelist .remove {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0 0.2rem;
+  }
+
+  .filelist .remove:hover { color: #9A3B2E; }
 
   textarea#content {
     width: 100%;
@@ -159,8 +200,8 @@
     color: var(--ink);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    font: inherit;
     font-family: var(--serif);
+    font-size: 1rem;
     line-height: 1.8;
     resize: vertical;
   }
@@ -183,11 +224,7 @@
     flex-wrap: wrap;
   }
 
-  .direction label {
-    font-size: 0.85rem;
-    color: var(--muted);
-    white-space: nowrap;
-  }
+  .direction label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
 
   .direction input {
     flex: 1 1 16rem;
@@ -217,11 +254,7 @@
   .ghost:hover { border-color: var(--muted); color: var(--ink); }
 
   /* 提交 */
-  .submit-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 1.25rem;
-  }
+  .submit-row { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
 
   .primary {
     appearance: none;
@@ -247,9 +280,7 @@
     min-height: 1.4em;
   }
 
-  .status.error {
-    color: #9A3B2E;
-  }
+  .status.error { color: #9A3B2E; }
 
   /* ── 结果 ─────────────────────────────────────── */
   .result { margin-top: 2.5rem; }
@@ -260,6 +291,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--line);
   }
@@ -271,13 +303,33 @@
     font-weight: 600;
   }
 
+  .result__actions { display: flex; gap: 0.5rem; }
+
+  .group { margin-top: 1.75rem; }
+  .group + .group {
+    margin-top: 2.25rem;
+    padding-top: 2.25rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .group__title {
+    margin: 0 0 1.25rem;
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .group__pending { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .group__error { margin: 0; color: #9A3B2E; font-size: 0.9rem; }
+
   ol.items {
     list-style: none;
-    margin: 1.75rem 0 0;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 1.6rem;
   }
 
   ol.items li {
@@ -328,7 +380,7 @@
   <header class="masthead">
     <div>
       <h1>论文结构化摘要</h1>
-      <p>上传 PDF 或粘贴文本，生成七项中文要点，按你的研究方向定制。</p>
+      <p>上传最多 5 篇 PDF 或粘贴文本，生成七项中文要点，按你的研究方向定制。</p>
     </div>
     <a class="docs" href="/docs">接口文档</a>
   </header>
@@ -340,15 +392,16 @@
     </div>
 
     <div class="pane" id="pane-upload" role="tabpanel" aria-labelledby="tab-upload">
-      <div class="drop" id="drop" tabindex="0" role="button" aria-label="选择或拖入 PDF 文件">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="选择或拖入 PDF 文件，最多五个">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 16V4M12 4l-4 4M12 4l4 4"></path>
           <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
         </svg>
-        <strong id="drop-title">拖入 PDF，或点击选择文件</strong>
-        <span id="drop-hint">支持含文本层的 PDF，不超过 20MB</span>
-        <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+        <strong>拖入 PDF，或点击选择文件</strong>
+        <span id="drop-hint">支持含文本层的 PDF，最多 5 篇、每篇不超过 20MB</span>
+        <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
       </div>
+      <ul class="filelist" id="filelist" aria-label="已选文件"></ul>
     </div>
 
     <div class="pane" id="pane-paste" role="tabpanel" aria-labelledby="tab-paste" hidden>
@@ -371,9 +424,12 @@
   <section class="result" id="result" hidden aria-live="polite">
     <div class="result__head">
       <h2>结构化摘要</h2>
-      <button class="ghost" id="copy" type="button">复制全部</button>
+      <div class="result__actions">
+        <button class="ghost" id="copy" type="button">复制全部</button>
+        <button class="ghost" id="download" type="button">下载 Markdown</button>
+      </div>
     </div>
-    <ol class="items" id="items"></ol>
+    <div id="groups"></div>
   </section>
 
 </div>
@@ -392,28 +448,33 @@
     ["value_to_me", "对我的价值"],
   ];
 
+  const MAX_FILES = 5;
+  const CONCURRENCY = 2;
+  const MAX_BYTES = 20 * 1024 * 1024;
+
   const el = {
     tabUpload: document.getElementById("tab-upload"),
     tabPaste: document.getElementById("tab-paste"),
     paneUpload: document.getElementById("pane-upload"),
     panePaste: document.getElementById("pane-paste"),
     drop: document.getElementById("drop"),
-    dropTitle: document.getElementById("drop-title"),
     dropHint: document.getElementById("drop-hint"),
     file: document.getElementById("file"),
+    filelist: document.getElementById("filelist"),
     content: document.getElementById("content"),
     direction: document.getElementById("direction"),
     saveProfile: document.getElementById("save-profile"),
     submit: document.getElementById("submit"),
     status: document.getElementById("status"),
     result: document.getElementById("result"),
-    items: document.getElementById("items"),
+    groups: document.getElementById("groups"),
     copy: document.getElementById("copy"),
+    download: document.getElementById("download"),
   };
 
-  let selectedFile = null;
+  let files = [];       // 已选 File
   let mode = "upload";
-  let lastResult = null;
+  let lastResults = []; // [{title, data, error}]
 
   const setStatus = (msg, isError) => {
     el.status.textContent = msg || "";
@@ -433,29 +494,63 @@
   el.tabUpload.addEventListener("click", () => selectMode("upload"));
   el.tabPaste.addEventListener("click", () => selectMode("paste"));
 
-  // ── 文件选择 / 拖放 ─────────────────────────────
-  function setFile(file) {
-    if (!file) return;
-    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
-      setStatus("请选择 PDF 文件。", true);
-      return;
+  // ── 文件队列 ────────────────────────────────────
+  function isPdf(file) {
+    return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+  }
+
+  function addFiles(list) {
+    let ignored = 0;
+    for (const file of Array.from(list)) {
+      if (files.length >= MAX_FILES) { ignored++; continue; }
+      if (!isPdf(file) || file.size > MAX_BYTES) { ignored++; continue; }
+      if (files.some((f) => f.name === file.name && f.size === file.size)) continue;
+      files.push(file);
     }
-    if (file.size > 20 * 1024 * 1024) {
-      setStatus("文件超过 20MB，请换一个更小的 PDF。", true);
-      return;
-    }
-    selectedFile = file;
-    el.drop.classList.add("has-file");
-    el.dropTitle.textContent = file.name;
-    el.dropHint.textContent = (file.size / 1024 / 1024).toFixed(1) + " MB · 点击可更换";
-    setStatus("");
+    renderFiles();
+    if (ignored) setStatus("已忽略：非 PDF、超过 20MB 或超出 5 篇上限的文件。", true);
+    else setStatus("");
+  }
+
+  function renderFiles() {
+    el.filelist.innerHTML = "";
+    files.forEach((file, index) => {
+      const li = document.createElement("li");
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = file.name;
+
+      const size = document.createElement("span");
+      size.className = "size";
+      size.textContent = (file.size / 1024 / 1024).toFixed(1) + " MB";
+
+      const remove = document.createElement("button");
+      remove.className = "remove";
+      remove.type = "button";
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", "移除 " + file.name);
+      remove.addEventListener("click", () => {
+        files.splice(index, 1);
+        renderFiles();
+      });
+
+      li.append(name, size, remove);
+      el.filelist.append(li);
+    });
+    el.dropHint.textContent = files.length
+      ? `已选 ${files.length}/${MAX_FILES} 篇，可继续添加`
+      : "支持含文本层的 PDF，最多 5 篇、每篇不超过 20MB";
   }
 
   el.drop.addEventListener("click", () => el.file.click());
   el.drop.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.file.click(); }
   });
-  el.file.addEventListener("change", () => setFile(el.file.files[0]));
+  el.file.addEventListener("change", () => {
+    addFiles(el.file.files);
+    el.file.value = "";
+  });
 
   ["dragenter", "dragover"].forEach((ev) =>
     el.drop.addEventListener(ev, (e) => { e.preventDefault(); el.drop.classList.add("is-over"); })
@@ -463,7 +558,7 @@
   ["dragleave", "drop"].forEach((ev) =>
     el.drop.addEventListener(ev, (e) => { e.preventDefault(); el.drop.classList.remove("is-over"); })
   );
-  el.drop.addEventListener("drop", (e) => setFile(e.dataTransfer.files[0]));
+  el.drop.addEventListener("drop", (e) => addFiles(e.dataTransfer.files));
 
   // ── 研究方向默认值 ──────────────────────────────
   async function loadProfile() {
@@ -489,37 +584,29 @@
     }
   });
 
-  // ── 生成摘要 ────────────────────────────────────
-  async function requestSummary() {
-    const direction = el.direction.value.trim();
-    if (mode === "upload") {
-      if (!selectedFile) {
-        setStatus("请先选择或拖入一个 PDF 文件。", true);
-        return null;
-      }
-      const form = new FormData();
-      form.append("file", selectedFile);
-      if (direction) form.append("research_direction", direction);
-      return fetch("/upload", { method: "POST", body: form });
+  // ── 结果渲染 ────────────────────────────────────
+  function createGroup(title) {
+    const node = document.createElement("article");
+    node.className = "group";
+    if (title) {
+      const h = document.createElement("h3");
+      h.className = "group__title";
+      h.textContent = title;
+      node.append(h);
     }
-    const text = el.content.value.trim();
-    if (!text) {
-      setStatus("请先粘贴论文文本。", true);
-      return null;
-    }
-    return fetch("/summarize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: text, research_direction: direction }),
-    });
+    const pending = document.createElement("p");
+    pending.className = "group__pending";
+    pending.textContent = "处理中…";
+    node.append(pending);
+    return node;
   }
 
-  function render(data) {
-    lastResult = data;
-    el.items.innerHTML = "";
+  function itemsList(data) {
+    const ol = document.createElement("ol");
+    ol.className = "items";
     DIMS.forEach(([key, label], i) => {
       const li = document.createElement("li");
-      li.style.setProperty("--c", `var(--d${i + 1})`);
+      li.style.setProperty("--c", "var(--d" + (i + 1) + ")");
       li.style.setProperty("--i", String(i));
 
       const name = document.createElement("span");
@@ -531,45 +618,176 @@
       text.textContent = data[key] || "缺失";
 
       li.append(name, text);
-      el.items.append(li);
+      ol.append(li);
     });
+    return ol;
+  }
+
+  function fillGroup(node, data) {
+    const pending = node.querySelector(".group__pending");
+    if (pending) pending.remove();
+    node.append(itemsList(data));
+  }
+
+  function fillError(node, message) {
+    const pending = node.querySelector(".group__pending");
+    if (!pending) return;
+    pending.className = "group__error";
+    pending.textContent = "处理失败：" + message;
+  }
+
+  async function runPool(items, limit, worker) {
+    let next = 0;
+    const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        await worker(items[index], index);
+      }
+    });
+    await Promise.all(runners);
+  }
+
+  // ── 生成摘要 ────────────────────────────────────
+  async function runUploads() {
+    const total = files.length;
+    const started = Date.now();
+    lastResults = files.map((file) => ({ title: file.name, data: null, error: null }));
     el.result.hidden = false;
+    el.groups.innerHTML = "";
+    const nodes = lastResults.map((entry) => {
+      const node = createGroup(entry.title);
+      el.groups.append(node);
+      return node;
+    });
+
+    let done = 0;
+    await runPool(lastResults, CONCURRENCY, async (entry, index) => {
+      setStatus(`正在处理 ${done + 1}/${total} · ${entry.title}`);
+      try {
+        const form = new FormData();
+        form.append("file", files[index]);
+        const direction = el.direction.value.trim();
+        if (direction) form.append("research_direction", direction);
+        const res = await fetch("/upload", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "处理失败");
+        entry.data = data;
+        fillGroup(nodes[index], data);
+      } catch (err) {
+        entry.error = err.message || "处理失败";
+        fillError(nodes[index], entry.error);
+      }
+      done++;
+      setStatus(`已完成 ${done}/${total}，用时 ${((Date.now() - started) / 1000).toFixed(1)} 秒。`);
+    });
+
+    const ok = lastResults.filter((r) => r.data).length;
+    setStatus(
+      ok === total
+        ? `${total} 篇全部完成，用时 ${((Date.now() - started) / 1000).toFixed(1)} 秒。`
+        : `完成 ${ok}/${total} 篇，其余失败见上方标注。`,
+      ok !== total
+    );
+  }
+
+  async function runPaste(text) {
+    const started = Date.now();
+    lastResults = [{ title: "", data: null, error: null }];
+    el.result.hidden = false;
+    el.groups.innerHTML = "";
+    const node = createGroup("");
+    el.groups.append(node);
+    setStatus("正在生成…");
+    try {
+      const res = await fetch("/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, research_direction: el.direction.value.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "请求失败");
+      lastResults[0].data = data;
+      fillGroup(node, data);
+      setStatus(`完成，用时 ${((Date.now() - started) / 1000).toFixed(1)} 秒。`);
+    } catch (err) {
+      lastResults[0].error = err.message || "出错了";
+      fillError(node, lastResults[0].error);
+      setStatus(err.message || "出错了", true);
+    }
   }
 
   el.submit.addEventListener("click", async () => {
     setStatus("");
+    if (mode === "upload" && !files.length) {
+      setStatus("请先选择或拖入至少一个 PDF 文件。", true);
+      return;
+    }
+    if (mode === "paste" && !el.content.value.trim()) {
+      setStatus("请先粘贴论文文本。", true);
+      return;
+    }
+
     el.submit.disabled = true;
     el.submit.textContent = "生成中…";
-    el.result.hidden = true;
-
-    const started = Date.now();
     try {
-      const res = await requestSummary();
-      if (!res) return;
-      const data = await res.json();
-      if (!res.ok) {
-        const detail = data && data.detail;
-        throw new Error(typeof detail === "string" ? detail : "请求失败，请检查输入后重试。");
-      }
-      render(data);
-      setStatus(`完成，用时 ${((Date.now() - started) / 1000).toFixed(1)} 秒。`);
-    } catch (err) {
-      setStatus(err.message || "出错了，请重试。", true);
+      if (mode === "upload") await runUploads();
+      else await runPaste(el.content.value.trim());
     } finally {
       el.submit.disabled = false;
       el.submit.textContent = "生成摘要";
     }
   });
 
-  // ── 复制 ────────────────────────────────────────
+  // ── 复制 / 下载 ─────────────────────────────────
+  function successful() {
+    return lastResults.filter((r) => r.data);
+  }
+
   el.copy.addEventListener("click", async () => {
-    if (!lastResult) return;
-    const lines = DIMS.map(([key, label]) => `## ${label}\n${lastResult[key] || "缺失"}`);
+    const ok = successful();
+    if (!ok.length) {
+      setStatus("还没有可复制的结果。", true);
+      return;
+    }
+    const text = ok
+      .map((r) => {
+        const head = r.title ? `# ${r.title}\n\n` : "";
+        return head + DIMS.map(([key, label]) => `## ${label}\n${r.data[key] || "缺失"}`).join("\n\n");
+      })
+      .join("\n\n---\n\n");
     try {
-      await navigator.clipboard.writeText(lines.join("\n\n"));
-      setStatus("已复制全部摘要。");
+      await navigator.clipboard.writeText(text);
+      setStatus(`已复制 ${ok.length} 篇摘要。`);
     } catch (_) {
       setStatus("复制失败，请手动选择。", true);
+    }
+  });
+
+  el.download.addEventListener("click", async () => {
+    const ok = successful();
+    if (!ok.length) {
+      setStatus("还没有可导出的结果。", true);
+      return;
+    }
+    try {
+      const res = await fetch("/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ papers: ok.map((r) => ({ title: r.title, summary: r.data })) }),
+      });
+      if (!res.ok) throw new Error();
+      const markdown = await res.text();
+      const url = URL.createObjectURL(new Blob([markdown], { type: "text/markdown;charset=utf-8" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "abstracts.md";
+      document.body.append(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus(`已下载 ${ok.length} 篇摘要的 Markdown。`);
+    } catch (_) {
+      setStatus("导出失败，请重试。", true);
     }
   });
 

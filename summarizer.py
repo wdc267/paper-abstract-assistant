@@ -25,6 +25,10 @@ import re
 BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-v4-flash"
 
+# 单次请求超时（秒）与 SDK 内建重试次数；重试覆盖 429/5xx 等瞬时错误，指数退避
+REQUEST_TIMEOUT = 60.0
+MAX_RETRIES = 3
+
 # 全文低于该 token 数直接一次摘要，否则走 Map-Reduce
 DIRECT_TOKEN_LIMIT = 8_000
 # 单个 Map 单元（章节/分段）的 token 上限，超过则按空行再切
@@ -92,10 +96,13 @@ def summarize(text: str, research_direction: str = "") -> dict[str, str]:
         raw = _chat(_SYSTEM, _direct_prompt(text, research_direction))
         return _normalize(_parse_json(raw))
 
+    # 跳过空正文的分段：连续 ``[§]`` 标题会产生「有标题无内容」的段，
+    # 空内容喂给 JSON mode 会让模型回显 response_format（如 {"type":"json_object"}）导致解析失败。
     units = [
         (title, body)
         for title, body in _split_sections(text)
         for title, body in _chunk_section(title, body)
+        if body.strip()
     ]
     partials = [_map_unit(title, body) for title, body in units]
     raw = _chat(_SYSTEM, _reduce_prompt(partials, research_direction))
@@ -214,7 +221,12 @@ def _client():
             raise SummarizerError("未设置环境变量 DEEPSEEK_API_KEY")
         from openai import OpenAI
 
-        _CLIENT = OpenAI(api_key=key, base_url=BASE_URL)
+        _CLIENT = OpenAI(
+            api_key=key,
+            base_url=BASE_URL,
+            timeout=REQUEST_TIMEOUT,
+            max_retries=MAX_RETRIES,
+        )
     return _CLIENT
 
 
@@ -228,7 +240,7 @@ def _chat(system: str, user: str) -> str:
                 {"role": "user", "content": user},
             ],
             response_format={"type": "json_object"},
-            temperature=1.3,
+            temperature=0.3,
         )
     except SummarizerError:
         raise

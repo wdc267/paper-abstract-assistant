@@ -1,13 +1,15 @@
 # 论文结构化摘要助手
 
-输入一篇论文（PDF 或纯文本），调用 DeepSeek 生成 **7 项中文结构化摘要**，每项 2-3 句：研究问题、研究背景、研究方法、结论、创新点、局限性、对我的价值。其中「对我的价值」会结合你的研究方向个性化生成。
+输入论文（PDF 或纯文本，一次最多 5 篇 PDF），调用 DeepSeek 生成 **7 项中文结构化摘要**，每项 2-3 句：研究问题、研究背景、研究方法、结论、创新点、局限性、对我的价值。其中「对我的价值」会结合你的研究方向个性化生成，结果可导出为 Markdown。
 
 ## 特性
 
 - **PDF 直接入**：自研版面处理，兼容双栏/多栏学术排版，输出带页码与章节提示的纯文本。
+- **多篇批量**：一次最多选 5 篇 PDF，前端并发（2 路）逐篇处理，每篇独立渲染、独立报错，一篇失败不影响其余。
 - **长文不丢信息**：超长论文走手工 Map-Reduce——先按章节局部压缩，再全局归并，避免上下文截断。
 - **结构化输出**：固定 7 字段，JSON 解析失败自动修复，仍失败则明确报错。
 - **个性化**：「对我的价值」依据你的研究方向生成。
+- **一键导出**：多篇结果合并为 Markdown 复制或下载（`abstracts.md`）。
 
 ## 工作原理
 
@@ -39,7 +41,8 @@ PDF ──parser──▶ 纯文本（含页码/章节标记）
 | 模块1 解析器 | `parser.py` | PDF → 纯文本（含页码/章节提示），CLI 打印统计 | `bytes` → `str` |
 | 模块2 摘要器 | `summarizer.py` | 纯文本 → 7 字段结构化摘要 | `str` → `dict` |
 | 模块3 编排器 | `main.py` | HTTP 接口、模块串联、异常兜底、配置读写 | HTTP 层 |
-| 模块4 前端 | `index.html` | 上传、调接口、渲染结果 | — |
+| 模块4 前端 | `index.html` | 上传/粘贴、调接口、渲染结果、多篇编排 | — |
+| 模块5 格式化器 | `formatter.py` | 7 字段 dict → Markdown | `list[(标题, dict)]` → `str` |
 
 > 模块划分与数据契约是本项目的硬约束，详见 [CLAUDE.md](CLAUDE.md)。
 
@@ -120,9 +123,12 @@ print(result["value_to_me"])
 |------|------|------|
 | `POST` | `/summarize` | 纯文本 → 7 字段摘要，body `{"content": "...", "research_direction": "可选"} |
 | `POST` | `/upload` | 上传 PDF → 7 字段摘要（仅 PDF，≤20MB），表单字段 `file` 与可选 `research_direction` |
+| `POST` | `/export` | 已生成摘要 → Markdown 附件下载（不调模型），body `{"papers": [{"title": "...", "summary": {...}}]}` |
 | `GET` | `/profile` | 读取默认研究方向 |
 | `PUT` | `/profile` | 写回默认研究方向，body `{"research_direction": "..."}` |
-| `GET` | `/` | 前端页面（模块4 未实现时返回占位提示） |
+| `GET` | `/` | 前端页面 |
+
+前端「下载 Markdown」会把这批结果 POST 到 `/export`，由后端用 `formatter.py` 排版后返回 `abstracts.md`。多篇批量由前端编排：每篇单独调 `/upload`，并发 2 路，互不影响。
 
 请求省略 `research_direction` 时用默认研究方向；显式传入则覆盖本次。错误映射：解析失败 `400`、模型失败 `502`、参数校验 `422`。
 
@@ -148,11 +154,13 @@ paper-abstract-assistant/
 ├── summarizer.py        # 模块2 摘要器
 ├── main.py              # 模块3 编排器（FastAPI）
 ├── index.html           # 模块4 前端（单页，无构建）
+├── formatter.py         # 模块5 格式化器（Markdown 导出）
 ├── requirements.txt
 ├── sample_paper.txt     # 调试样本（由测试 PDF 转出）
 ├── CLAUDE.md            # 项目约束与设计决策
 ├── DEBUGGING.md         # Cursor 调试指南
 ├── .vscode/launch.json  # 调试配置
+├── .gitattributes       # 统一 LF 换行
 └── .gitignore
 ```
 
@@ -163,7 +171,7 @@ paper-abstract-assistant/
 ## 当前进度
 
 - [x] 模块1 解析器：PDF → 纯文本，标题识别含 Title Case 校验
-- [x] 模块2 摘要器：Map-Reduce + DeepSeek JSON mode
+- [x] 模块2 摘要器：Map-Reduce + DeepSeek JSON mode（含超时/重试）
 - [x] 模块3 编排器：FastAPI 接口 + config.yaml 研究方向配置
-- [x] 模块4 前端：单页 HTML（拖放上传 / 粘贴文本，七色字段编码）
-- [ ] 输出 Markdown 格式化（预留 `formatter`）
+- [x] 模块4 前端：单页 HTML（拖放上传 / 粘贴文本，七色字段编码，多篇 ≤5）
+- [x] 模块5 格式化器：Markdown 导出（`formatter.py` + `/export`）
